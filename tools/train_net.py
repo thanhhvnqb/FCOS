@@ -123,6 +123,8 @@ def main():
         help="path to config file",
         type=str,
     )
+    parser.add_argument("--netname", default="mpprcnn", help="datetime of training", type=str)
+    parser.add_argument("--date", help="datetime of training", type=str)
     parser.add_argument("--local_rank", type=int, default=0)
     parser.add_argument(
         "--skip-test",
@@ -153,7 +155,7 @@ def main():
     cfg.merge_from_list(args.opts)
     cfg.freeze()
 
-    output_dir = cfg.OUTPUT_DIR
+    output_dir = os.path.join(cfg.OUTPUT_DIR, args.netname, args.date)
     if output_dir:
         mkdir(output_dir)
 
@@ -170,6 +172,11 @@ def main():
         logger.info(config_str)
     logger.info("Running with config:\n{}".format(cfg))
 
+    output_config_path = os.path.join(output_dir, 'config.yml')
+    logger.info("Saving config into: {}".format(output_config_path))
+    # save overloaded model config in the output directory
+    save_config(cfg, output_config_path)
+    
     model = train(cfg, args.local_rank, args.distributed)
 
     if not args.skip_test:

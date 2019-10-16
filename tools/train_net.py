@@ -176,7 +176,7 @@ def main():
     logger.info("Saving config into: {}".format(output_config_path))
     # save overloaded model config in the output directory
     save_config(cfg, output_config_path)
-    
+
     model = train(cfg, args.local_rank, args.distributed)
 
     if not args.skip_test:

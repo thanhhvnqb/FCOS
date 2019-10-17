@@ -153,9 +153,10 @@ def main():
 
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
+    output_dir = os.path.join(cfg.OUTPUT_DIR, args.netname, args.date + "/")
+    cfg.OUTPUT_DIR = output_dir
     cfg.freeze()
 
-    output_dir = os.path.join(cfg.OUTPUT_DIR, args.netname, args.date)
     if output_dir:
         mkdir(output_dir)
 

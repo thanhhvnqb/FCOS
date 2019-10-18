@@ -6,6 +6,7 @@ import os
 
 class DatasetCatalog(object):
     # DATA_DIR = "datasets"
+    # DATA_DIR = "/home/thanh/DATA/Dataset/human_pose/"
     DATA_DIR = "/home/codepro/ThanhHV/Dataset/"
     DATASETS = {
         "coco_2017_train": {

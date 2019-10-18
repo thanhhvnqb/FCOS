@@ -165,6 +165,7 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN = 2000
 _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 2000
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead"
+_C.MODEL.RPN.IOU_LOSS_TYPE = "iou"
 
 
 # ---------------------------------------------------------------------------- #
@@ -217,6 +218,7 @@ _C.MODEL.ROI_BOX_HEAD.USE_GN = False
 _C.MODEL.ROI_BOX_HEAD.DILATION = 1
 _C.MODEL.ROI_BOX_HEAD.CONV_HEAD_DIM = 256
 _C.MODEL.ROI_BOX_HEAD.NUM_STACKED_CONVS = 4
+_C.MODEL.ROI_BOX_HEAD.IOU_LOSS_TYPE = "iou"
 
 
 _C.MODEL.ROI_MASK_HEAD = CN()

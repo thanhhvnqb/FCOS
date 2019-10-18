@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from torch import nn
 import os
 from ..utils import concat_box_prediction_layers
-from fcos_core.layers import IOULoss
+from fcos_core.layers import IOULoss, IntersectionLoss
 from fcos_core.layers import SigmoidFocalLoss
 from fcos_core.modeling.matcher import Matcher
 from fcos_core.modeling.utils import cat
@@ -50,6 +50,7 @@ class FCOSLossComputation(object):
         # we make use of IOU Loss for bounding boxes regression,
         # but we found that L1 in log scale can yield a similar performance
         self.box_reg_loss_func = IOULoss(self.iou_loss_type)
+        # self.box_reg_loss_func = IntersectionLoss(self.iou_loss_type)
         self.centerness_loss_func = nn.BCEWithLogitsLoss(reduction="sum")
 
     def get_sample_region(self, gt, strides, num_points_per, gt_xs, gt_ys, radius=1.0):

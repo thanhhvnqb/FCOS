@@ -42,7 +42,9 @@ def train(cfg, local_rank, distributed):
 
     if distributed:
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[local_rank], output_device=local_rank,
+            model,
+            device_ids=[local_rank],
+            output_device=local_rank,
             # this should be removed if we update BatchNorm stats
             broadcast_buffers=False,
         )
@@ -53,9 +55,7 @@ def train(cfg, local_rank, distributed):
     output_dir = cfg.OUTPUT_DIR
 
     save_to_disk = get_rank() == 0
-    checkpointer = DetectronCheckpointer(
-        cfg, model, optimizer, scheduler, output_dir, save_to_disk
-    )
+    checkpointer = DetectronCheckpointer(cfg, model, optimizer, scheduler, output_dir, save_to_disk)
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
 
@@ -86,11 +86,11 @@ def run_test(cfg, model, distributed):
     if distributed:
         model = model.module
     torch.cuda.empty_cache()  # TODO check if it helps
-    iou_types = ("bbox",)
+    iou_types = ("bbox", )
     if cfg.MODEL.MASK_ON:
-        iou_types = iou_types + ("segm",)
+        iou_types = iou_types + ("segm", )
     if cfg.MODEL.KEYPOINT_ON:
-        iou_types = iou_types + ("keypoints",)
+        iou_types = iou_types + ("keypoints", )
     output_folders = [None] * len(cfg.DATASETS.TEST)
     dataset_names = cfg.DATASETS.TEST
     if cfg.OUTPUT_DIR:
@@ -116,28 +116,13 @@ def run_test(cfg, model, distributed):
 
 def main():
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Training")
-    parser.add_argument(
-        "--config-file",
-        default="",
-        metavar="FILE",
-        help="path to config file",
-        type=str,
-    )
+    parser.add_argument("--config-file", default="", metavar="FILE", help="path to config file", type=str)
     parser.add_argument("--netname", default="mpprcnn", help="datetime of training", type=str)
     parser.add_argument("--date", help="datetime of training", type=str)
     parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument(
-        "--skip-test",
-        dest="skip_test",
-        help="Do not test the final model",
-        action="store_true",
-    )
-    parser.add_argument(
-        "opts",
-        help="Modify config options using the command-line",
-        default=None,
-        nargs=argparse.REMAINDER,
-    )
+    parser.add_argument("--skip-test", dest="skip_test", help="Do not test the final model", action="store_true")
+    parser.add_argument("opts", default=None, nargs=argparse.REMAINDER, \
+                        help="Modify config options using the command-line")
 
     args = parser.parse_args()
 
@@ -146,9 +131,7 @@ def main():
 
     if args.distributed:
         torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(
-            backend="nccl", init_method="env://"
-        )
+        torch.distributed.init_process_group(backend="nccl", init_method="env://")
         synchronize()
 
     cfg.merge_from_file(args.config_file)

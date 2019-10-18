@@ -6,10 +6,10 @@ fcosfunc ()
     python -m torch.distributed.launch\
     --nproc_per_node=2\
     --master_port=$((RANDOM + 10000))\
-    tools/train_net.py --netname $netname --date $date\
+    tools/test_net.py --netname $netname --date $date --iter 90000\
     --config-file configs/fcos/fcos_imprv_R_50_FPN_1x.yaml\
     DATALOADER.NUM_WORKERS 2\
-    OUTPUT_DIR ./out/ 2>&1 | tee -a "./out/run_${date}_$netname.log"
+    OUTPUT_DIR ./out/ 2>&1 | tee -a "./out/run_test_${date}_$netname.log"
 }
 
 fcosfunc

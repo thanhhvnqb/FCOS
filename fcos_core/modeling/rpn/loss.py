@@ -12,7 +12,7 @@ from .utils import concat_box_prediction_layers
 from ..balanced_positive_negative_sampler import BalancedPositiveNegativeSampler
 from ..utils import cat
 
-from fcos_core.layers import smooth_l1_loss
+from fcos_core.layers import smooth_l1_loss, IOULoss, IntersectionLoss
 from fcos_core.modeling.matcher import Matcher
 from fcos_core.structures.boxlist_ops import boxlist_iou
 from fcos_core.structures.boxlist_ops import cat_boxlist
@@ -22,9 +22,7 @@ class RPNLossComputation(object):
     """
     This class computes the RPN loss.
     """
-
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder,
-                 generate_labels_func):
+    def __init__(self, cfg, proposal_matcher, fg_bg_sampler, box_coder, generate_labels_func):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -36,8 +34,11 @@ class RPNLossComputation(object):
         self.fg_bg_sampler = fg_bg_sampler
         self.box_coder = box_coder
         self.copied_fields = []
+        self.iou_loss_type = cfg.MODEL.FCOS.IOU_LOSS_TYPE
         self.generate_labels_func = generate_labels_func
         self.discard_cases = ['not_visibility', 'between_thresholds']
+        self.box_reg_loss_func = IOULoss(self.iou_loss_type)
+        # self.box_reg_loss_func = IntersectionLoss(self.iou_loss_type)
 
     def match_targets_to_anchors(self, anchor, target, copied_fields=[]):
         match_quality_matrix = boxlist_iou(target, anchor)
@@ -57,9 +58,7 @@ class RPNLossComputation(object):
         labels = []
         regression_targets = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
-            matched_targets = self.match_targets_to_anchors(
-                anchors_per_image, targets_per_image, self.copied_fields
-            )
+            matched_targets = self.match_targets_to_anchors(anchors_per_image, targets_per_image, self.copied_fields)
 
             matched_idxs = matched_targets.get_field("matched_idxs")
             labels_per_image = self.generate_labels_func(matched_targets)
@@ -79,15 +78,12 @@ class RPNLossComputation(object):
                 labels_per_image[inds_to_discard] = -1
 
             # compute regression targets
-            regression_targets_per_image = self.box_coder.encode(
-                matched_targets.bbox, anchors_per_image.bbox
-            )
+            regression_targets_per_image = self.box_coder.encode(matched_targets.bbox, anchors_per_image.bbox)
 
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
 
         return labels, regression_targets
-
 
     def __call__(self, anchors, objectness, box_regression, targets):
         """
@@ -123,12 +119,13 @@ class RPNLossComputation(object):
             beta=1.0 / 9,
             size_average=False,
         ) / (sampled_inds.numel())
+        # box_loss = self.box_reg_loss_func(box_regression[sampled_pos_inds],
+        #                                   regression_targets[sampled_pos_inds]) / (sampled_inds.numel())
 
-        objectness_loss = F.binary_cross_entropy_with_logits(
-            objectness[sampled_inds], labels[sampled_inds]
-        )
+        objectness_loss = F.binary_cross_entropy_with_logits(objectness[sampled_inds], labels[sampled_inds])
 
         return objectness_loss, box_loss
+
 
 # This function should be overwritten in RetinaNet
 def generate_rpn_labels(matched_targets):
@@ -144,14 +141,7 @@ def make_rpn_loss_evaluator(cfg, box_coder):
         allow_low_quality_matches=True,
     )
 
-    fg_bg_sampler = BalancedPositiveNegativeSampler(
-        cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE, cfg.MODEL.RPN.POSITIVE_FRACTION
-    )
+    fg_bg_sampler = BalancedPositiveNegativeSampler(cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE, cfg.MODEL.RPN.POSITIVE_FRACTION)
 
-    loss_evaluator = RPNLossComputation(
-        matcher,
-        fg_bg_sampler,
-        box_coder,
-        generate_rpn_labels
-    )
+    loss_evaluator = RPNLossComputation(cfg, matcher, fg_bg_sampler, box_coder, generate_rpn_labels)
     return loss_evaluator

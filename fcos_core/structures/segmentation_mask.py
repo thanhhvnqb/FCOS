@@ -399,7 +399,7 @@ class PolygonList(object):
             masks = torch.stack([p.convert_to_binarymask() for p in self.polygons])
         else:
             size = self.size
-            masks = torch.empty([0, size[1], size[0]], dtype=torch.uint8)
+            masks = torch.empty([0, size[1], size[0]], dtype=torch.bool)
 
         return BinaryMaskList(masks, size=self.size)
 
@@ -415,7 +415,7 @@ class PolygonList(object):
             # advanced indexing on a single dimension
             selected_polygons = []
             if isinstance(item, torch.Tensor) and \
-               item.dtype == torch.uint8 or item.dtype == torch.bool:
+               item.dtype == torch.bool or item.dtype == torch.bool:
                 item = item.nonzero()
                 item = item.squeeze(1) if item.numel() > 0 else item
                 item = item.tolist()
@@ -524,7 +524,7 @@ class SegmentationMask(object):
             self.iter_idx += 1
             return next_segmentation
         raise StopIteration()
-        
+
     next = __next__  # Python 2 compatibility
 
     def __repr__(self):
